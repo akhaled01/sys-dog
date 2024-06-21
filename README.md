@@ -14,7 +14,8 @@
 - **Designed for Debian-based Systems**: Tailored to work seamlessly with Ubuntu and other Debian-based distributions.
 - **No Extra Dependencies**: Utilizes native system commands, `procfs`, and `sysfs` to gather necessary parameters, eliminating the need for additional installations.
 
-> Note: `sys-dog` may not work on macOS or Windows systems without native implementations for these platforms. Contributions are welcome to extend compatibility!
+> [NOTE!]
+> `sys-dog` may not work on macOS or Windows systems without native implementations for these platforms. Contributions are welcome to extend compatibility!
 
 ## Getting Started
 
