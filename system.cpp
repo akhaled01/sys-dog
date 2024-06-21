@@ -3,8 +3,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sstream>
 #include <errno.h>
 #include <numeric>
+#include <thread>
+#include <chrono>
 
 /// @brief parses info from __cpuid and returns cpu brand string
 /// @return cpu brand string
@@ -101,35 +104,46 @@ int getProcNum()
   }
 }
 
-/// @brief get percentage cpu usage from the `top` command
-/// @return int representing cpu utilization
-float getCPUUtil()
+CpuUsage getCpuUsage()
 {
-  std::ifstream proc_stat("/proc/stat");
-  if (!proc_stat.is_open())
+  std::ifstream file("/proc/stat");
+  std::string line;
+  CpuUsage usage;
+
+  if (std::getline(file, line))
   {
-    return 0.0f;
+    istringstream ss(line);
+    std::string cpu;
+    ss >> cpu >> usage.user >> usage.nice >> usage.system >> usage.idle >> usage.iowait >> usage.irq >> usage.softirq >> usage.steal;
   }
-  proc_stat.ignore(5, ' ');
-  std::vector<size_t> times;
-  for (size_t time; proc_stat >> time; times.push_back(time))
-    ;
-  proc_stat.close();
-  if (times.size() < 4)
-  {
-    return 0.0f;
-  }
-  size_t idle_time = times[3];
-  size_t total_time = accumulate(times.begin(), times.end(), 0);
-  static size_t previous_idle_time = 0;
-  static size_t previous_total_time = 0;
-  const float idle_time_delta = idle_time - previous_idle_time;
-  const float total_time_delta = total_time - previous_total_time;
-  const float utilization = 100.0 * (1.0 - idle_time_delta / total_time_delta);
-  // Update previous values for the next iteration
-  previous_idle_time = idle_time;
-  previous_total_time = total_time;
-  return utilization;
+
+  return usage;
+}
+
+double calcCPUUtil(const CpuUsage &prev, const CpuUsage &curr)
+{
+  unsigned long long prevIdle = prev.idle + prev.iowait;
+  unsigned long long currIdle = curr.idle + curr.iowait;
+
+  unsigned long long prevNonIdle = prev.user + prev.nice + prev.system + prev.irq + prev.softirq + prev.steal;
+  unsigned long long currNonIdle = curr.user + curr.nice + curr.system + curr.irq + curr.softirq + curr.steal;
+
+  unsigned long long prevTotal = prevIdle + prevNonIdle;
+  unsigned long long currTotal = currIdle + currNonIdle;
+
+  unsigned long long totalDiff = currTotal - prevTotal;
+  unsigned long long idleDiff = currIdle - prevIdle;
+
+  return (static_cast<double>(totalDiff - idleDiff) / totalDiff) * 100.0;
+}
+
+double getCurrentCpuUtil(float sleeptime)
+{
+  CpuUsage prevUsage = getCpuUsage();
+  std::this_thread::sleep_for(std::chrono::duration<float>(sleeptime));
+  CpuUsage currUsage = getCpuUsage();
+
+  return calcCPUUtil(prevUsage, currUsage);
 }
 
 /// @brief gets cpu temp from `/sys/class/thermal/thermal_zone0`

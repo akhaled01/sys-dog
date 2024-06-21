@@ -45,6 +45,11 @@ struct ProcessInfo
   double memoryUsage;
 };
 
+struct CpuUsage
+{
+  unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
+};
+
 struct IP4
 {
   std::string name;
@@ -96,7 +101,7 @@ string CPUinfo();
 const char *getOsName();
 char *hostname();
 int getProcNum();
-float getCPUUtil();
+double getCurrentCpuUtil(float sleeptime);
 float getCPUTemp();
 
 std::pair<long, long> getMemUsage();

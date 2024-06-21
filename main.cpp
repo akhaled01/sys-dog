@@ -68,7 +68,7 @@ void systemWindow(const char *id, ImVec2 size, ImVec2 position)
       if (frameCountCPU >= 1.0f / targetFPSCPU && animGraph)
       {
         frameCountCPU = 0.0f;
-        float cpuUtilization = getCPUUtil();
+        double cpuUtilization = getCurrentCpuUtil((1.0f / targetFPSCPU));
         cpuUtilizationHistory.push_back(cpuUtilization);
       }
 
